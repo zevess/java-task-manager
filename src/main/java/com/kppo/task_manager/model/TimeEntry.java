@@ -21,7 +21,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-
 @Entity()
 @Table(name = "time_entries")
 @Data
@@ -29,7 +28,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class TimeEntry {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -38,16 +38,16 @@ public class TimeEntry {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TaskType type;
+    private TaskType taskType;
 
     @Column(length = 500)
     private String description;
 
     @Column(nullable = false)
-    private LocalDateTime timeStart;
+    private LocalDateTime startTime;
 
-    @Column(nullable = false)
-    private LocalDateTime timeEnd;
+    @Column
+    private LocalDateTime endTime;
 
     @Column(nullable = false)
     private boolean isBillable;
@@ -56,7 +56,7 @@ public class TimeEntry {
     private LocalDateTime createdAt;
 
     @PrePersist
-    protected void onCreate(){
+    protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
 }

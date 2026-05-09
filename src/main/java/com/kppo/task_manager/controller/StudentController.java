@@ -12,37 +12,38 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.kppo.task_manager.dto.StudentCreateRequest;
-import com.kppo.task_manager.dto.StudentResponse;
-import com.kppo.task_manager.dto.StudentUpdateRequest;
-import com.kppo.task_manager.service.StudentService;
+import com.kppo.task_manager.dto.student.StudentCreateRequest;
+import com.kppo.task_manager.dto.student.StudentResponse;
+import com.kppo.task_manager.dto.student.StudentUpdateRequest;
+import com.kppo.task_manager.service.impl.StudentServiceImpl;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-@RestController 
-@RequiredArgsConstructor 
+@RestController
+@RequiredArgsConstructor
 @RequestMapping("/api/students")
 public class StudentController {
-    private final StudentService studentService;
+    private final StudentServiceImpl studentService;
 
     @GetMapping("/all")
-    public ResponseEntity<List<StudentResponse>> getAll(){
+    public ResponseEntity<List<StudentResponse>> getAll() {
         return ResponseEntity.status(HttpStatus.OK).body(studentService.getAll());
     }
- 
+
     @GetMapping("/{id}")
-    public ResponseEntity<StudentResponse> getById(@PathVariable Long id){
+    public ResponseEntity<StudentResponse> getById(@PathVariable Long id) {
         return ResponseEntity.status(HttpStatus.OK).body(studentService.getById(id));
     }
-    
+
     @PostMapping
-    public ResponseEntity<StudentResponse> create(@RequestBody @Valid StudentCreateRequest student){
+    public ResponseEntity<StudentResponse> create(@RequestBody @Valid StudentCreateRequest student) {
         return ResponseEntity.status(HttpStatus.CREATED).body(studentService.create(student));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<StudentResponse> update(@PathVariable Long id, @RequestBody @Valid StudentUpdateRequest student){
+    public ResponseEntity<StudentResponse> update(@PathVariable Long id,
+            @RequestBody @Valid StudentUpdateRequest student) {
         return ResponseEntity.status(HttpStatus.OK).body(studentService.update(id, student));
     }
 }
