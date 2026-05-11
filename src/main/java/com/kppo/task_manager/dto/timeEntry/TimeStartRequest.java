@@ -4,11 +4,11 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 public record TimeStartRequest(
-        @NotNull(message = "Введите id студента") Long studentId,
+                @NotNull(message = "Введите id студента") Long studentId,
 
-        @NotBlank(message = "Введите тип задачи") String taskType,
+                @NotBlank(message = "Введите тип задачи") String taskType,
 
-        String description,
+                String description,
 
-        Boolean billable) {
+                Boolean billable) {
 }

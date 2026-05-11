@@ -46,7 +46,7 @@ public class TimeEntry {
     @Column(nullable = false)
     private LocalDateTime startTime;
 
-    @Column
+    @Column()
     private LocalDateTime endTime;
 
     @Column(nullable = false)

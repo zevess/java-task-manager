@@ -1,12 +1,23 @@
 package com.kppo.task_manager.service.impl;
 
+import java.time.DayOfWeek;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.kppo.task_manager.dto.stats.DayStats;
+import com.kppo.task_manager.dto.stats.WeeklyStatsResponse;
 import com.kppo.task_manager.dto.timeEntry.TimeEntryResponse;
 import com.kppo.task_manager.dto.timeEntry.TimeStartRequest;
 import com.kppo.task_manager.dto.timeEntry.TimeStopRequest;
@@ -33,15 +44,28 @@ public class TimeEntryServiceImpl implements TimeEntryService {
         if (timeEntryRepository.findByStudentIdAndEndTimeIsNull(student.getId()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "У студента уже есть активная сессия задачи");
         }
+        // String type = request.taskType().trim().toUpperCase();
+        // TaskType type = TaskType.valueOf(request.taskType().trim().toUpperCase());
+        // boolean isValidType = Arrays.stream(TaskType.values()).anyMatch(e ->
+        // e.name().equals(type.name()));
+        // if (!isValidType) {
+        // throw new ResponseStatusException(HttpStatus.CONFLICT, "Неверный тип
+        // задачи");
+        // }
 
-        TaskType type = TaskType.valueOf(request.taskType().trim().toUpperCase());
+        TaskType type;
+        try {
+            type = TaskType.valueOf(request.taskType().trim().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Неверный тип задачи");
+        }
 
         TimeEntry entry = TimeEntry.builder()
                 .student(student)
                 .taskType(type)
                 .description(request.description())
                 .startTime(LocalDateTime.now())
-                .isBillable(Boolean.TRUE.equals(request.billable()))
+                .isBillable(request.billable())
                 .build();
 
         return TimeEntryResponse.from(timeEntryRepository.save(entry));
@@ -62,6 +86,55 @@ public class TimeEntryServiceImpl implements TimeEntryService {
     @Override
     public List<TimeEntryResponse> getByStudent(Long studentId) {
         List<TimeEntry> timeEntries = timeEntryRepository.findByStudentId(studentId);
+        if (timeEntries.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Сессии не найдены");
+        }
         return timeEntries.stream().map(TimeEntryResponse::from).toList();
+    }
+
+    @Override
+    public WeeklyStatsResponse getWeeklyStats(Long studentId, LocalDate startDate, LocalDate endDate,
+            boolean includeNotBillable) {
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Студен не найден"));
+        LocalDateTime start = startDate != null ? startDate.atStartOfDay()
+                : LocalDate.now().with(DayOfWeek.MONDAY).atStartOfDay();
+        LocalDateTime end = endDate != null ? endDate.plusDays(1).atStartOfDay() : start.plusDays(7);
+
+        List<TimeEntry> entries = timeEntryRepository.findCompletedByStudentAndDateRange(studentId,
+                start, end, includeNotBillable);
+
+        Map<LocalDate, List<TimeEntry>> groupedByDate = entries.stream()
+                .collect(Collectors.groupingBy(e -> e.getStartTime().toLocalDate(), TreeMap::new, Collectors.toList()));
+        List<DayStats> daysStats = new ArrayList<>();
+        double totalMinutes = 0;
+
+        for (Map.Entry<LocalDate, List<TimeEntry>> dayEntry : groupedByDate.entrySet()) {
+            LocalDate date = dayEntry.getKey();
+            double dayMinutes = 0;
+            Map<String, Double> typeHours = new LinkedHashMap<>();
+
+            for (TimeEntry entry : dayEntry.getValue()) {
+                long mins = Duration.between(entry.getStartTime(), entry.getEndTime()).toMinutes();
+                dayMinutes += mins;
+
+                String type = entry.getTaskType().name();
+                typeHours.merge(type, mins / 60.0, Double::sum);
+            }
+            totalMinutes += dayMinutes;
+            daysStats.add(new DayStats(
+                    date,
+                    date.getDayOfWeek().toString(),
+                    dayMinutes / 60,
+                    typeHours));
+        }
+
+        return new WeeklyStatsResponse(
+                studentId,
+                student.getName(),
+                start.toLocalDate(),
+                end.minusDays(1).toLocalDate(),
+                totalMinutes / 60,
+                daysStats);
     }
 }
