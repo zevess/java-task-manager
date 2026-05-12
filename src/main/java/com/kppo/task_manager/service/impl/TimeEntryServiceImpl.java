@@ -5,7 +5,6 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,14 +43,6 @@ public class TimeEntryServiceImpl implements TimeEntryService {
         if (timeEntryRepository.findByStudentIdAndEndTimeIsNull(student.getId()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "У студента уже есть активная сессия задачи");
         }
-        // String type = request.taskType().trim().toUpperCase();
-        // TaskType type = TaskType.valueOf(request.taskType().trim().toUpperCase());
-        // boolean isValidType = Arrays.stream(TaskType.values()).anyMatch(e ->
-        // e.name().equals(type.name()));
-        // if (!isValidType) {
-        // throw new ResponseStatusException(HttpStatus.CONFLICT, "Неверный тип
-        // задачи");
-        // }
 
         TaskType type;
         try {
